@@ -1,7 +1,7 @@
 # tft_st7735
 
 ## About
-Library for the Raspberry Pi to display some stuff on a 1,8" TFT.
+Library for the Raspberry Pi and a 1,77" TFT Display.
 Released under the LGPL license.
 
 This library provides basic functions to initialize the ST7735 Controller and draw text, lines and circles
@@ -12,7 +12,7 @@ The source code in tft_st7735.cpp/h is based on several examples from the intern
 
 ## Required Hardware
 * Raspberry Pi
-* 1,8" TFT from Sainsmart
+* 1,8" or 1,77" TFT from Sainsmart or AZDelivery with ST7735 Controller
 
 ## Setup
 * Install wiringPi. See http://projects.drogon.net/raspberry-pi/wiringpi/
