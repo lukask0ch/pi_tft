@@ -1,7 +1,9 @@
-# tft_st7735
+# Library for the Raspberry Pi. 
+
+It uses a 1,77" TFT SPI Display and a I2C Fuel Gauge.
 
 ## About
-Library for the Raspberry Pi and a 1,77" TFT Display.
+Library for the Raspberry Pi and a 1,77" TFT Display based on the library by Juergen Schick (jschick).
 Released under the LGPL license.
 
 This library provides basic functions to initialize the ST7735 Controller and draw text, lines and circles
@@ -13,6 +15,7 @@ The source code in tft_st7735.cpp/h is based on several examples from the intern
 ## Required Hardware
 * Raspberry Pi
 * 1,8" or 1,77" TFT from Sainsmart or AZDelivery with ST7735 Controller
+* I2C Fuel Gage
 
 ## Setup
 * Install wiringPi. See http://projects.drogon.net/raspberry-pi/wiringpi/
@@ -20,8 +23,3 @@ The source code in tft_st7735.cpp/h is based on several examples from the intern
 * Build it with make [install]. 'Install' will install the library and includes to usr/local/lib and usr/local/include
 * Additional make directives: clean install-static uninstall
 
-## Usage
-*  see examples
-
-## Hints
-* Only initR is tested, initG is for a different display
