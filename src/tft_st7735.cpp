@@ -145,6 +145,10 @@ void TFT_ST7735::drawChar(char c, unsigned int color, unsigned char size)
   {
     bulkDrawChar(_cursor_x, _cursor_y, c, color);
   }
+  else if(size == 2)
+  {
+    bulkDrawChar2(_cursor_x, _cursor_y, c, color);
+  }
   else
   {
     for (unsigned char i =0; i<FONT_WIDTH; i++ )
@@ -181,6 +185,10 @@ void TFT_ST7735::drawChar(unsigned char x, unsigned char y, char c,
   {
     bulkDrawChar(x, y, c, color);
   }
+  else if(size == 2)
+  {
+    bulkDrawChar2(x, y, c, color);
+  }
   else
   {
     for (unsigned char i =0; i<FONT_WIDTH; i++ )
@@ -194,7 +202,7 @@ void TFT_ST7735::drawChar(unsigned char x, unsigned char y, char c,
         }
 	else
 	{
-	  fillRect(x+i*size, y+j*size, size, size, TFT_BLACK);       //NEU!!!!!!!!!!!!!!
+	  fillRect(x+i*size, y+j*size, size, size, TFT_BLACK);
 	}
         line >>= 1;
       }
@@ -237,6 +245,50 @@ unsigned char* p = (unsigned char*)values;
   }
   setAddrWindow(x, y, x+(FONT_WIDTH-1), y+((FONT_HEIGHT+1)-1));
   writedata((unsigned char*)values,2*FONT_WIDTH*(FONT_HEIGHT+1));
+}
+
+/*
+ * drawChar: with size 2
+ *  Draw a character at the specified position. Bulk transfer will be used
+ *********************************************************************************
+ */
+void TFT_ST7735::bulkDrawChar2(unsigned char x, unsigned char y, char c,
+              unsigned int color)
+{
+unsigned int values[2*2*FONT_WIDTH*(FONT_HEIGHT+1)];
+unsigned char col1, col2;
+unsigned char* p = (unsigned char*)values;
+
+  for (unsigned char i =0; i<FONT_WIDTH; i++ )
+  {
+    unsigned char line = font[(c*FONT_WIDTH)+i];
+    for (unsigned char j = 0; j<(FONT_HEIGHT+1); j++)
+    {
+      if (line & 0x1)
+      {
+        col1 = color>>8;
+        col2 = color;
+      }
+      else
+      {
+        col1 = _background>>8;
+        col2 = _background;
+      }
+      unsigned int offset = (8*(j*FONT_WIDTH) + 4*i);
+      p[offset]   = col1;
+      p[offset+2]   = col1;
+      p[offset+20]   = col1;
+      p[offset+22]   = col1;
+
+      p[offset+1] = col2;
+      p[offset+3] = col2;
+      p[offset+21] = col2;
+      p[offset+23] = col2;
+      line >>= 1;
+    }
+  }
+  setAddrWindow(x, y, x+(2*FONT_WIDTH-1), y+(2*(FONT_HEIGHT+1)-1));
+  writedata((unsigned char*)values,4*2*FONT_WIDTH*(FONT_HEIGHT+1));
 }
 
 /*
