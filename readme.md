@@ -19,7 +19,7 @@ The source code in tft_st7735.cpp/h is based on several examples from the intern
 
 ## Setup
 * Install wiringPi. See http://projects.drogon.net/raspberry-pi/wiringpi/
-* Checkout this project
-* Build it with make [install]. 'Install' will install the library and includes to usr/local/lib and usr/local/include
+* Run: make, sudo make install, make_tft.bat
+* 'Install' will install the library and includes to usr/local/lib and usr/local/include
 * Additional make directives: clean install-static uninstall
 
