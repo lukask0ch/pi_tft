@@ -22,81 +22,74 @@
 #include <iostream>
 #include <fstream>
 
+#define BUTTON 18
+
+using namespace std;
+
 float getsoc();
 float getvolt();
 long getMicrotime();
 
 int fd=0;
+bool buttonPressed = false;
 
+void buttonInterrupt(void)
+{
+	buttonPressed=true;
+}
 
 int main (void)
 {
-TFT_ST7735 tft = *new TFT_ST7735(0, 24, 25, 32000000);
+	TFT_ST7735 tft = *new TFT_ST7735(0, 24, 25, 32000000);
 
-  wiringPiSetupGpio();      // initialize wiringPi and wiringPiGpio
+	wiringPiSetupGpio();      // initialize wiringPi and wiringPiGpio
 
-  fd = wiringPiI2CSetup(0x36);
+	fd = wiringPiI2CSetup(0x36);
 
-  wiringPiI2CWriteReg16(fd, 0x06, 0x4000);
+	wiringPiI2CWriteReg16(fd, 0x06, 0x4000);
 
-  tft.commonInit();         // initialize SPI and reset display
-  tft.initR();              // initialize display
-  tft.setBackground(TFT_BLACK);
+	tft.commonInit();         // initialize SPI and reset display
+	tft.initR();              // initialize display
+	tft.setBackground(TFT_BLACK);
 
-  tft.clearScreen();        // reset Display
-  // tft.setRotation(true);
+	tft.clearScreen();        // reset Display
+	// tft.setRotation(true);
 
-  tft.drawString(5,2,"Bahn1",TFT_WHITE,2);
-    
-  tft.drawHorizontalLine(0, 158, 128, TFT_RED);
-  tft.drawHorizontalLine(0, 159, 128, TFT_RED);
+	tft.drawString(5,2,"Bahn1",TFT_WHITE,2);
 
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer [10];
+	tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
+	tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
 
-  int buttonPressed = 0;
-  pinMode(18, INPUT);
+	tft.drawHorizontalLine(0, 158, 128, TFT_RED);
+	tft.drawHorizontalLine(0, 159, 128, TFT_RED);
 
-  char soc[5];
-  char volt[5];
+	pinMode(BUTTON, INPUT);
+	wiringPiISR(BUTTON, INT_EDGE_RISING, &buttonInterrupt);
 
-  long int start, stop =0;
-  start = getMicrotime();
+	char soc[5];
+	char volt[5];
 
-  int counter = 2390;
+	int min, sec, millisec=0;
+	long int start, timenow = 0;
+	char runningtime[10] = "00:00:00";
+	char roundtime[10] = "00:00:00";
+	int startsignal = 0;
 
-  std::ofstream myfile;
-  myfile.open ("/home/pi/tft/timesoc.txt", std::ios_base::app);
-  myfile << "Neuer Start" << std::endl;
-  myfile.close();
+	int counter = 2390;
 
-  printf("Running\n");
+	std::ofstream myfile;
+	myfile.open ("/home/pi/tft/timesoc.txt", std::ios_base::app);
+	myfile << "Neuer Start" << std::endl;
+	myfile.close();
 
-  while(1)
-  {
-	
+	printf("Running\n");
 
-	time (&rawtime);
-  	timeinfo = localtime (&rawtime);
-	
- 	strftime (buffer,80,"%H:%M:%S",timeinfo);
-	tft.drawString(15,40,buffer,TFT_WHITE,2);
-	
+	start = getMicrotime();
 
-	snprintf(soc,6, "%f %%", getsoc());
-	strcat(soc, " %");
-	tft.drawString(5,145,soc,TFT_WHITE,1);
+	while(1)
+	{
 
-	snprintf(volt,6, "%f V", getvolt());
-	strcat(volt, " V");
-	tft.drawString(70,145,volt,TFT_WHITE,1);
-
-	if(digitalRead(18) == 1){
-		stop = getMicrotime()-start;
-		stop = stop * 1e-4;
-		printf("%u \n", stop);
-	}
+	/*
 
 	if(counter==2400) //2400 ca 10 min
 	{
@@ -108,12 +101,39 @@ TFT_ST7735 tft = *new TFT_ST7735(0, 24, 25, 32000000);
 		myfile.close();
 	}
 	counter++;
-	
-	delay (100);
+	*/
 
-  }
+	if(buttonPressed){ //Button pressed
+		buttonPressed=false;
+		strcpy (roundtime, runningtime);
+		tft.drawString(15,100,roundtime,TFT_WHITE,2);
+	}
 
-  return 0;
+	timenow = getMicrotime()-start;
+
+	min = timenow / 60000000;
+	sec = (timenow / 1000000) % 60;
+	millisec = (timenow / 10000) % 100;
+	sprintf(runningtime, "%02d:%02d:%02d", min, sec, millisec);
+
+	tft.drawString(15,55,runningtime,TFT_WHITE,2);
+
+	if (sec==0)
+	{
+		snprintf(soc,6, "%f %%", getsoc());
+		strcat(soc, " %");
+		tft.drawString(5,145,soc,TFT_WHITE,1);
+
+		snprintf(volt,6, "%f V", getvolt());
+		strcat(volt, " V");
+		tft.drawString(70,145,volt,TFT_WHITE,1);
+	}
+
+	delay (25);
+
+	}
+
+	return 0;
 }
 
 float getsoc()
