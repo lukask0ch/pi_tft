@@ -113,6 +113,7 @@ class TFT_ST7735
     void setAddrWindow (unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
     void bulkDrawColor (unsigned int color, unsigned int length);
     void bulkDrawChar  (unsigned char x, unsigned char y, char c, unsigned int color);
+    void bulkDrawChar2 (unsigned char x, unsigned char y, char c, unsigned int color);
     void pushColor     (unsigned int color);
     void drawFastLine  (unsigned char x, unsigned char y, unsigned char length, unsigned int color, unsigned char rotflag);
 
