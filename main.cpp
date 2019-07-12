@@ -28,14 +28,21 @@ using namespace std;
 
 float getsoc();
 float getvolt();
-long getMicrotime();
+unsigned long long getMicrotime();
 
 int fd=0;
-bool buttonPressed = false;
+int buttonPressed =0;
+unsigned long long int last_interrupt_time=0;
+unsigned long long int interrupt_time =0;
 
 void buttonInterrupt(void)
 {
-	buttonPressed=true;
+	interrupt_time = getMicrotime();
+	if (interrupt_time - last_interrupt_time > 1000) //nach interrupt eine sekunde warten
+ 	{
+  		buttonPressed=1;
+  	}
+  	last_interrupt_time = interrupt_time;
 }
 
 int main (void)
@@ -70,15 +77,19 @@ int main (void)
 	char volt[5];
 
 	int min, sec, millisec=0;
-	long int start, timenow = 0;
+	unsigned long long int start, timenow = 0;
 	char runningtime[10] = "00:00:00";
 	char roundtime[10] = "00:00:00";
-	int startsignal = 0;
+	int sec_merker=0;
 
-	int counter = 2390;
+	time_t rawtime;
+ 	struct tm * timeinfo;
+   	char buffer [10];
+
+	int counter = 4390;
 
 	std::ofstream myfile;
-	myfile.open ("/home/pi/tft/timesoc.txt", std::ios_base::app);
+	myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);       //Dateipfad anpasssen!
 	myfile << "Neuer Start" << std::endl;
 	myfile.close();
 
@@ -89,47 +100,62 @@ int main (void)
 	while(1)
 	{
 
-	/*
+		if(counter==4400)
+		{
+			counter =0;
+			//printf("Count \n");
 
-	if(counter==2400) //2400 ca 10 min
-	{
-		counter =0;
-		//printf("%s \n", buffer);
+			time (&rawtime);
+			timeinfo = localtime (&rawtime);
 
-		myfile.open ("/home/pi/tft/timesoc.txt", std::ios_base::app);
-		myfile << buffer << " " << getsoc() << " " << getvolt() << std::endl;
-		myfile.close();
-	}
-	counter++;
-	*/
+			strftime (buffer,80,"%H:%M:%S",timeinfo);
 
-	if(buttonPressed){ //Button pressed
-		buttonPressed=false;
-		strcpy (roundtime, runningtime);
-		tft.drawString(15,100,roundtime,TFT_WHITE,2);
-	}
+			myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);
+			myfile << buffer << " " << getsoc() << " " << getvolt() << std::endl;
+			myfile.close();
+		}
+		counter++;
+		
+		if(buttonPressed){ //Button pressed
+			buttonPressed=0;
 
-	timenow = getMicrotime()-start;
+			timenow = interrupt_time-start;
+			
+			min = timenow / 60000;
+			sec = (timenow / 1000) % 60;
+			millisec = (timenow / 10) % 100;
+			sprintf(roundtime, "%02d:%02d:%02d", min, sec, millisec);
 
-	min = timenow / 60000000;
-	sec = (timenow / 1000000) % 60;
-	millisec = (timenow / 10000) % 100;
-	sprintf(runningtime, "%02d:%02d:%02d", min, sec, millisec);
+			tft.drawString(15,100,roundtime,TFT_WHITE,2);
 
-	tft.drawString(15,55,runningtime,TFT_WHITE,2);
+			}
 
-	if (sec==0)
-	{
-		snprintf(soc,6, "%f %%", getsoc());
-		strcat(soc, " %");
-		tft.drawString(5,145,soc,TFT_WHITE,1);
+		timenow = getMicrotime()-start;
 
-		snprintf(volt,6, "%f V", getvolt());
-		strcat(volt, " V");
-		tft.drawString(70,145,volt,TFT_WHITE,1);
-	}
+		min = timenow / 60000;
+		sec = (timenow / 1000) % 60;
+		millisec = (timenow / 10) % 100;
+		sprintf(runningtime, "%02d:%02d:%02d", min, sec, millisec);
 
-	delay (25);
+		tft.drawString(15,55,runningtime,TFT_WHITE,2);
+
+		if (sec==0 & sec_merker==0)					//update Akkuanzeige einmal pro minute
+		{
+			sec_merker=1;
+			snprintf(soc,6, "%f %%", getsoc());
+			strcat(soc, " %");
+			tft.drawString(5,145,soc,TFT_WHITE,1);
+
+			snprintf(volt,6, "%f V", getvolt());
+			strcat(volt, " V");
+			tft.drawString(70,145,volt,TFT_WHITE,1);
+		}
+		if (sec>0)
+		{
+			sec_merker=0;
+		}
+
+		delay (120);
 
 	}
 
@@ -160,10 +186,9 @@ float getvolt()
   	return ((float) (vCell1+vCell2) / 800.0);
 }
 
-long getMicrotime(){
+unsigned long long getMicrotime(){
 	struct timeval currentTime;
 	gettimeofday(&currentTime, NULL);
-	return currentTime.tv_sec * (int)1e6 + currentTime.tv_usec;
+	unsigned long long millis = (unsigned long long) currentTime.tv_sec * 1000 + currentTime.tv_usec/1000;
+	return millis;
 }
-
-
