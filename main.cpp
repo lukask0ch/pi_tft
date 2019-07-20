@@ -23,6 +23,7 @@
 #include <fstream>
 
 #define BUTTON 18
+#define DEBOUNCETIME 15
 
 using namespace std;
 
@@ -31,19 +32,44 @@ float getvolt();
 unsigned long long getMicrotime();
 
 int fd=0;
-int buttonPressed =0;
-unsigned long long int last_interrupt_time=0;
+bool flagbuttonPressed = false;
+bool flagshutdown = false;
 unsigned long long int interrupt_time =0;
 
-void buttonInterrupt(void)
+PI_THREAD (buttonThread)
 {
-	interrupt_time = getMicrotime();
-	if (interrupt_time - last_interrupt_time > 1000) //nach interrupt eine sekunde warten
- 	{
-  		buttonPressed=1;
-  	}
-  	last_interrupt_time = interrupt_time;
+	int buttonPressed = 0;
+	while(!flagshutdown){
+		if(digitalRead(BUTTON) == 1){
+			//printf("%d\n", buttonPressed);
+			buttonPressed++;
+		}
+		else{
+			buttonPressed = 0;
+		}
+		if(buttonPressed == DEBOUNCETIME){
+			interrupt_time = getMicrotime();
+			flagbuttonPressed = true;
+
+			printf("Single Pressed \n");
+
+			for(int i=0;i<500;i++)
+			{
+				if(digitalRead(BUTTON) == 1)
+					buttonPressed++;
+				usleep(10000);
+			}
+			if(buttonPressed>=500)
+			{
+				flagshutdown = true;
+				
+			}
+		}
+		usleep(1000);
+	}
+	return 0;
 }
+
 
 int main (void)
 {
@@ -71,7 +97,9 @@ int main (void)
 	tft.drawHorizontalLine(0, 159, 128, TFT_RED);
 
 	pinMode(BUTTON, INPUT);
-	wiringPiISR(BUTTON, INT_EDGE_RISING, &buttonInterrupt);
+	int x = piThreadCreate (buttonThread) ;
+	if (x != 0)
+  		printf ("it didn't start \n");
 
 	char soc[5];
 	char volt[5];
@@ -116,8 +144,8 @@ int main (void)
 		}
 		counter++;
 		
-		if(buttonPressed){ //Button pressed
-			buttonPressed=0;
+		if(flagbuttonPressed){ //Button pressed
+			flagbuttonPressed=false;
 
 			timenow = interrupt_time-start;
 			
@@ -127,9 +155,26 @@ int main (void)
 			sprintf(roundtime, "%02d:%02d:%02d", min, sec, millisec);
 
 			tft.drawString(15,100,roundtime,TFT_WHITE,2);
-
+		}
+		if(flagshutdown)
+		{
+			printf("Long Pressed \n");
+			tft.clearScreen(TFT_RED);
+			while(digitalRead(BUTTON))
+			{
+				usleep(10000);
 			}
+			tft.clearScreen(TFT_GREEN);
+			printf("Shutdown \n");
+			sleep(2);
+			tft.clearScreen();
+			flagshutdown=false;
+			sleep(1);
+			system("sudo shutdown -h now");
+			sleep(10);
 
+		}
+		
 		timenow = getMicrotime()-start;
 
 		min = timenow / 60000;
