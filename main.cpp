@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include<string.h>
 
+#include <math.h>
+
 #include <iostream>
 #include <fstream>
 
@@ -227,6 +229,23 @@ float getvolt()
 	vCell2 = (vCell2) >> 4;
 	
   	return ((float) (vCell1+vCell2) / 800.0);
+}
+
+char calcSoc()
+{
+	char soc[5];
+	float result, temp, rawsoc, rawvolt;
+	
+	rawsoc = getsoc();
+	warvolt = getvolt();
+	
+	temp = (rawvolt-3,48)*100/(4,15-3,48);		// Volt in Prozent umrechen mit max und min Batteriespannung
+	result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
+	snprintf(soc,6, "%f %%", result);		//? %%
+	strcat(soc, " %");
+	
+	return soc;
+	
 }
 
 unsigned long long getMicrotime(){
