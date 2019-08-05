@@ -31,6 +31,7 @@ using namespace std;
 
 float getsoc();
 float getvolt();
+char calcSoc();
 unsigned long long getMicrotime();
 
 int fd = 0;
@@ -98,8 +99,8 @@ int main (void)
 	if (x != 0)
   		printf ("buttonThread didn't start \n");
 
-	char soc[5];
-	char volt[5];
+	char soc[10];
+	char volt[10];
 
 	int min, sec, millisec = 0;
 	unsigned long long int start, timenow = 0;
@@ -183,11 +184,11 @@ int main (void)
 		if (sec==0 & sec_merker==0)					//update Akkuanzeige einmal pro minute
 		{
 			sec_merker=1;
-			snprintf(soc,6, "%f %%", getsoc());
+			snprintf(soc,6, "%f", getsoc());
 			strcat(soc, " %");
 			tft.drawString(5,145,soc,TFT_WHITE,1);
 
-			snprintf(volt,6, "%f V", getvolt());
+			snprintf(volt,6, "%f", getvolt());
 			strcat(volt, " V");
 			tft.drawString(70,145,volt,TFT_WHITE,1);
 		}
@@ -225,19 +226,18 @@ float getvolt()
 
 char calcSoc()
 {
-	char soc[5];
+	char soc[10];
 	float result, temp, rawsoc, rawvolt;
 	
 	rawsoc = getsoc();
-	warvolt = getvolt();
+	rawvolt = getvolt();
 	
 	temp = (rawvolt-3,48)*100/(4,15-3,48);		// Volt in Prozent umrechen mit max und min Batteriespannung
 	result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
-	snprintf(soc,6, "%f %%", result);		//? %%
+	snprintf(soc,6, "%f", result);
 	strcat(soc, " %");
 	
 	return soc;
-	
 }
 
 unsigned long long getMicrotime()
