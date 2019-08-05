@@ -31,7 +31,7 @@ using namespace std;
 
 float getsoc();
 float getvolt();
-char calcSoc();
+float calcSoc();
 unsigned long long getMicrotime();
 
 int fd = 0;
@@ -101,6 +101,9 @@ int main (void)
 
 	char soc[10];
 	char volt[10];
+	
+	float socf, voltf, est = 0;
+	float last = 100;
 
 	int min, sec, millisec = 0;
 	unsigned long long int start, timenow = 0;
@@ -184,13 +187,24 @@ int main (void)
 		if (sec==0 & sec_merker==0)					//update Akkuanzeige einmal pro minute
 		{
 			sec_merker=1;
-			snprintf(soc,6, "%f", getsoc());
+			socf = getsoc();				//getsoc or calcSoc
+			snprintf(soc,6, "%f", socf);
 			strcat(soc, " %");
 			tft.drawString(5,145,soc,TFT_WHITE,1);
 
-			snprintf(volt,6, "%f", getvolt());
+			voltf = getvolt();
+			snprintf(volt,6, "%f", voltf);
 			strcat(volt, " V");
 			tft.drawString(70,145,volt,TFT_WHITE,1);
+			
+			est = 100/(last-socf)/60;
+			last=socf;
+			
+			printf("akkulaufzeit in h: %f\n",est);
+			printf("raw soc: %f\n", socf);
+			printf("calc soc: %f\n", calcSoc());
+			
+			
 		}
 		if (sec>0)
 			sec_merker=0;
@@ -224,9 +238,8 @@ float getvolt()
   	return ((float) (vCell1+vCell2) / 800.0);
 }
 
-char calcSoc()
+float calcSoc()
 {
-	char soc[10];
 	float result, temp, rawsoc, rawvolt;
 	
 	rawsoc = getsoc();
@@ -234,10 +247,8 @@ char calcSoc()
 	
 	temp = (rawvolt-3,48)*100/(4,15-3,48);		// Volt in Prozent umrechen mit max und min Batteriespannung
 	result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
-	snprintf(soc,6, "%f", result);
-	strcat(soc, " %");
 	
-	return soc;
+	return result;
 }
 
 unsigned long long getMicrotime()
