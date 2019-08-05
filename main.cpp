@@ -245,7 +245,7 @@ float calcSoc()
 	rawsoc = getsoc();
 	rawvolt = getvolt();
 	
-	temp = (rawvolt-3,48)*100/(4,15-3,48);		// Volt in Prozent umrechen mit max und min Batteriespannung
+	temp = (rawvolt-3.48)*100/(4.15-3.48);		// Volt in Prozent umrechen mit max und min Batteriespannung
 	result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
 	
 	return result;
