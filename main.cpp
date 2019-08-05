@@ -44,13 +44,10 @@ PI_THREAD (buttonThread)
 	while(!flagshutdown)
 	{
 		if(digitalRead(BUTTON) == 1)
-		{
 			buttonPressed++;
-		}
 		else
-		{
 			buttonPressed = 0;
-		}
+		
 		if(buttonPressed == DEBOUNCETIME)		// Single Press
 		{
 			interrupt_time = getMicrotime();
@@ -63,9 +60,7 @@ PI_THREAD (buttonThread)
 				usleep(10000);
 			}
 			if(buttonPressed>=500)				// Long Press
-			{
 				flagshutdown = true;
-			}
 		}
 		usleep(1000);
 	}
@@ -197,12 +192,9 @@ int main (void)
 			tft.drawString(70,145,volt,TFT_WHITE,1);
 		}
 		if (sec>0)
-		{
 			sec_merker=0;
-		}
 
 		delay (120);
-
 	}
 
 	return 0;
@@ -248,7 +240,8 @@ char calcSoc()
 	
 }
 
-unsigned long long getMicrotime(){
+unsigned long long getMicrotime()
+{
 	struct timeval currentTime;
 	gettimeofday(&currentTime, NULL);
 	unsigned long long millis = (unsigned long long) currentTime.tv_sec * 1000 + currentTime.tv_usec/1000;
