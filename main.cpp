@@ -1,12 +1,11 @@
 /*****************************************************************************************************
-* TFT1_8 1,8" Display from Sainsmart with a ST7735 controller and a RaspberryPi
-*
-* This is a test program to control the 1.8" ST7735 TFT with the RaspberryPi and tft_st7735 library along
-* with the wiringPi library
+* main.cpp
+* Controlles the diplay and reads the battery percentage
 */
 
 #include "wiringPi.h"
 #include "wiringPiSPI.h"
+#include <wiringPiI2C.h>
 
 #include "tft_st7735.h"
 #include "tft_manager.h"
@@ -15,10 +14,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <wiringPiI2C.h>
 #include <unistd.h>
 #include<string.h>
-
 #include <math.h>
 
 #include <iostream>
@@ -52,6 +49,7 @@ PI_THREAD (buttonThread)
 		if(buttonPressed == DEBOUNCETIME)		// Single Press
 		{
 			interrupt_time = getMicrotime();
+			//send interruptime
 			flagbuttonPressed = true;
 
 			for(int i=0;i<500;i++)
@@ -66,6 +64,34 @@ PI_THREAD (buttonThread)
 		usleep(1000);
 	}
 	return 0;
+}
+
+PI_THREAD (logbattery)
+{
+	time_t rawtime;
+ 	struct tm * timeinfo;
+   	char buffer [10];
+	
+	std::ofstream myfile;
+	myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);       //Dateipfad anpasssen!
+	myfile << "Neuer Start" << std::endl;
+	myfile.close();
+	
+	while(1)
+	{
+		time (&rawtime);
+		timeinfo = localtime (&rawtime);
+
+		strftime (buffer,80,"%H:%M:%S",timeinfo);
+
+		myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);
+		myfile << buffer << " " << getsoc() << " " << getvolt() << std::endl;
+		myfile.close();	
+		
+		sleep(600);
+	}
+	return 0;
+		
 }
 
 
@@ -111,40 +137,12 @@ int main (void)
 	char roundtime[10] = "00:00:00";
 	int sec_merker = 0;
 
-	time_t rawtime;
- 	struct tm * timeinfo;
-   	char buffer [10];
-
-	int counter = 4390;
-
-	std::ofstream myfile;
-	myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);       //Dateipfad anpasssen!
-	myfile << "Neuer Start" << std::endl;
-	myfile.close();
-
 	printf("Running\n");
 
 	start = getMicrotime();
 
 	while(1)
-	{
-
-		if(counter==4400)
-		{
-			counter =0;
-			//printf("Count \n");
-
-			time (&rawtime);
-			timeinfo = localtime (&rawtime);
-
-			strftime (buffer,80,"%H:%M:%S",timeinfo);
-
-			myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);
-			myfile << buffer << " " << getsoc() << " " << getvolt() << std::endl;
-			myfile.close();
-		}
-		counter++;
-		
+	{		
 		if(flagbuttonPressed)					// Single Press
 		{ 
 			flagbuttonPressed=false;
@@ -159,7 +157,7 @@ int main (void)
 			tft.drawString(15,100,roundtime,TFT_WHITE,2);
 		}
 
-		if(flagshutdown)							//Long Press
+		if(flagshutdown)					//Long Press
 		{
 			tft.clearScreen(TFT_RED);
 			while(digitalRead(BUTTON))
@@ -196,15 +194,6 @@ int main (void)
 			snprintf(volt,6, "%f", voltf);
 			strcat(volt, " V");
 			tft.drawString(70,145,volt,TFT_WHITE,1);
-			
-			est = 100/(last-socf)/60;
-			last=socf;
-			
-			printf("akkulaufzeit in h: %f\n",est);
-			printf("raw soc: %f\n", socf);
-			printf("calc soc: %f\n", calcSoc());
-			
-			
 		}
 		if (sec>0)
 			sec_merker=0;
@@ -246,8 +235,8 @@ float calcSoc()
 	rawvolt = getvolt();
 	
 	temp = (rawvolt-3.48)*100/(4.15-3.48);		// Volt in Prozent umrechen mit max und min Batteriespannung
-	result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
-	
+	//result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
+	result = (rawsoc+temp)/2;			// mitterlwert
 	return result;
 }
 
