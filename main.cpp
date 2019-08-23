@@ -21,7 +21,7 @@
 #include <iostream>
 #include <fstream>
 
-#define BUTTON 18
+#define BUTTON 20
 #define DEBOUNCETIME 15
 
 using namespace std;
@@ -41,7 +41,7 @@ PI_THREAD (buttonThread)
 	int buttonPressed = 0;
 	while(!flagshutdown)
 	{
-		if(digitalRead(BUTTON) == 1)
+		if(digitalRead(BUTTON) == 0)
 			buttonPressed++;
 		else
 			buttonPressed = 0;
@@ -54,7 +54,7 @@ PI_THREAD (buttonThread)
 
 			for(int i=0;i<500;i++)
 			{
-				if(digitalRead(BUTTON) == 1)
+				if(digitalRead(BUTTON) == 0)
 					buttonPressed++;
 				usleep(10000);
 			}
@@ -101,6 +101,9 @@ int main (void)
 
 	wiringPiSetupGpio();      					// initialize wiringPi and wiringPiGpio
 
+	pinMode(BUTTON, INPUT);
+	pullUpDnControl(BUTTON, PUD_UP);
+	
 	fd = wiringPiI2CSetup(0x36);				// initialize I2C Device
 
 	wiringPiI2CWriteReg16(fd, 0x06, 0x4000);	// start I2C Device
@@ -120,7 +123,6 @@ int main (void)
 	tft.drawHorizontalLine(0, 158, 128, TFT_RED);
 	tft.drawHorizontalLine(0, 159, 128, TFT_RED);
 
-	pinMode(BUTTON, INPUT);
 	int x = piThreadCreate (buttonThread) ;
 	if (x != 0)
   		printf ("buttonThread didn't start \n");
@@ -160,7 +162,7 @@ int main (void)
 		if(flagshutdown)					//Long Press
 		{
 			tft.clearScreen(TFT_RED);
-			while(digitalRead(BUTTON))
+			while(!digitalRead(BUTTON))
 			{
 				usleep(10000);
 			}
