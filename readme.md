@@ -11,3 +11,4 @@ Programm für das Systems zur Erfassung, Bearbeitung und Auswertung von Wettkamp
 ## Setup
 * make
 * sudo make install
+* make -f build.mk
