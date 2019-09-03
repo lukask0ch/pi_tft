@@ -28,6 +28,7 @@ extern "C" {
 
 #define BUTTON 20
 #define DEBOUNCETIME 15
+#define BAHN "Bahn1"
 #define BROKERIP "192.168.213.66:1883"
 #define TOPIC "event/timer/1.1/time"
 #define TOPIC_S "event/timer/1.1/status"
@@ -62,7 +63,7 @@ PI_THREAD (buttonThread)
 	char* payload;
 	payload = (char *) malloc(20 * sizeof(char));
 	
-	while(!flagshutdown)
+	while(1)
 	{
 		if(digitalRead(BUTTON) == 0)
 			buttonPressed++;
@@ -148,7 +149,7 @@ int main (void)
 	tft.clearScreen();        					// reset Display
 	// tft.setRotation(true);					
 
-	tft.drawString(5,2,"Bahn1",TFT_WHITE,2);
+	tft.drawString(5,2,BAHN,TFT_WHITE,2);
 
 	tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
 	tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
@@ -197,17 +198,27 @@ int main (void)
 		if(flagshutdown)					//Long Press
 		{
 			tft.clearScreen(TFT_RED);
-			while(!digitalRead(BUTTON))
-			{
-				usleep(10000);
-			}
-			tft.clearScreen(TFT_GREEN);
+			tft.drawString(15,40,"Loslassen zum Herunterfahren",TFT_WHITE,2);
 			sleep(2);
-			tft.clearScreen();
-			flagshutdown=false;
-			sleep(1);
-			system("sudo shutdown -h now");
-			sleep(10);
+			if(digitalRead(BUTTON))
+			{
+				tft.clearScreen(TFT_GREEN);
+				sleep(2);
+				tft.clearScreen();
+				
+				sleep(1);
+				system("sudo shutdown -h now");
+				sleep(10);
+			}
+			else
+			{
+				flagshutdown=false;
+				tft.clearSreen();
+				tft.drawString(5,2,BAHN,TFT_WHITE,2);
+
+				tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
+				tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
+			}
 		}
 		
 		timenow = getMicrotime()-start;
