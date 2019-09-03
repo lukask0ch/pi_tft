@@ -87,7 +87,8 @@ PI_THREAD (buttonThread)
 				flagshutdown = true;
 		}
 		usleep(1000);
-	}	
+	}
+	free(&payload);
 	return 0;
 }
 
@@ -156,7 +157,7 @@ int main (void)
 	int x = piThreadCreate (buttonThread) ;
 	if (x != 0)
   		printf ("buttonThread didn't start \n");
-	int x = piThreadCreate (status) ;
+	x = piThreadCreate (status) ;
 	if (x != 0)
   		printf ("statusThread didn't start \n");
 
@@ -235,7 +236,6 @@ int main (void)
 		delay (120);
 	}
 	disconnectFromBroker();
-	free(&payload);
 	
 	return 0;
 }
