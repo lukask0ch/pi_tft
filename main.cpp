@@ -43,6 +43,7 @@ unsigned long long getMicrotime();
 int fd = 0;
 bool flagbuttonPressed = false;
 bool flagshutdown = false;
+bool connected = false;
 unsigned long long int interrupt_time = 0;
 
 PI_THREAD(status)
@@ -50,7 +51,14 @@ PI_THREAD(status)
 	char* state = (char*) "online";
 	while(1)
 	{
-		sendMessage((char*)TOPIC_S, state);
+		//sendMessage((char*)TOPIC_S, state);
+
+		if ( system("ping -c1 192.168.213.1 -w 2 ") == 0) //gateway 192.168.213.1
+    	{
+       			connected = true;
+   		}
+		else
+			connected = false;
 		sleep(10);
 	}
 	return 0;
@@ -74,11 +82,11 @@ PI_THREAD (buttonThread)
 		{
 			interrupt_time = getMicrotime();
 			
-			getTime(&payload);
-			sendMessage((char*)TOPIC, payload);
+			//getTime(&payload);
+			//sendMessage((char*)TOPIC, payload);
 			
 			flagbuttonPressed = true;
-			writeBackup(payload);
+			//writeBackup(payload);
 
 			for(int i=0;i<500;i++)
 			{
@@ -126,12 +134,13 @@ PI_THREAD (logbattery)
 
 int main (void)
 {
+	printf("Starting\n");
 	TFT_ST7735 tft = *new TFT_ST7735(0, 24, 25, 32000000);
 	
-	instantiateClient((char*)BROKERIP);
-	connectToBroker();
+	//instantiateClient((char*)BROKERIP);
+	//connectToBroker();
 
-	backupInit();
+	//backupInit();
 
 	wiringPiSetupGpio();      					// initialize wiringPi and wiringPiGpio
 
@@ -153,9 +162,7 @@ int main (void)
 
 	tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
 	tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
-
-	tft.drawHorizontalLine(0, 158, 128, TFT_RED);
-	tft.drawHorizontalLine(0, 159, 128, TFT_RED);
+	tft.drawString(15,100,"00:00:00",TFT_WHITE,2);
 
 	int x = piThreadCreate (buttonThread) ;
 	if (x != 0)
@@ -181,6 +188,17 @@ int main (void)
 
 	while(1)
 	{		
+		if(!connected)
+		{
+			tft.drawHorizontalLine(0, 158, 128, TFT_RED);
+			tft.drawHorizontalLine(0, 159, 128, TFT_RED);
+		}
+		else
+		{
+			tft.drawHorizontalLine(0, 158, 128, TFT_BLACK);
+			tft.drawHorizontalLine(0, 159, 128, TFT_BLACK);
+		}
+		
 		if(flagbuttonPressed)					// Single Press
 		{ 
 			flagbuttonPressed=false;
@@ -198,13 +216,18 @@ int main (void)
 		if(flagshutdown)					//Long Press
 		{
 			tft.clearScreen(TFT_RED);
-			tft.drawString(15,40,"Loslassen zum Herunterfahren",TFT_WHITE,2);
-			sleep(2);
+			tft.setBackground(TFT_RED);
+			tft.drawString(10,30,"Loslassen zum",TFT_WHITE,1);
+			tft.drawString(10,40,"Herunterfahren",TFT_WHITE,1);
+			tft.drawString(10,90,"Gedrueckthalten zum",TFT_WHITE,1);
+			tft.drawString(10,100,"Abbrechen",TFT_WHITE,1);
+			
+			sleep(4);
 			if(digitalRead(BUTTON))
 			{
-				tft.clearScreen(TFT_GREEN);
-				sleep(2);
-				tft.clearScreen();
+				tft.clearScreen(TFT_BLUE);
+				tft.setBackground(TFT_BLUE);
+				tft.drawString(10,50,"Herunterfahren...",TFT_WHITE,1);
 				
 				sleep(1);
 				system("sudo shutdown -h now");
@@ -213,14 +236,29 @@ int main (void)
 			else
 			{
 				flagshutdown=false;
+				tft.setBackground(TFT_BLACK);
 				tft.clearScreen();
+				
 				tft.drawString(5,2,BAHN,TFT_WHITE,2);
 
 				tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
 				tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
+				tft.drawString(15,100,roundtime,TFT_WHITE,2);
+
+				socf = getsoc();				//getsoc or calcSoc
+				snprintf(soc,6, "%f", socf);
+				strcat(soc, " %");
+				tft.drawString(5,145,soc,TFT_WHITE,1);
+
+				voltf = getvolt();
+				snprintf(volt,6, "%f", voltf);
+				strcat(volt, " V");
+				tft.drawString(70,145,volt,TFT_WHITE,1);
+
 			}
 		}
 		
+		//start = hier Startzeitpunkt einfügen
 		timenow = getMicrotime()-start;
 
 		min = timenow / 60000;
@@ -248,7 +286,7 @@ int main (void)
 
 		delay (120);
 	}
-	disconnectFromBroker();
+	//disconnectFromBroker();
 	
 	return 0;
 }
