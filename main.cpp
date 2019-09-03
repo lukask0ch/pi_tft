@@ -213,7 +213,7 @@ int main (void)
 			else
 			{
 				flagshutdown=false;
-				tft.clearSreen();
+				tft.clearScreen();
 				tft.drawString(5,2,BAHN,TFT_WHITE,2);
 
 				tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
