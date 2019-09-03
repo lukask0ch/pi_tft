@@ -1,6 +1,5 @@
 /*****************************************************************************************************
 * main.cpp
-* Controlles the diplay and reads the battery percentage
 */
 
 #include "wiringPi.h"
@@ -15,14 +14,21 @@
 #include <sys/time.h>
 
 #include <unistd.h>
-#include<string.h>
+#include <string.h>
 #include <math.h>
 
 #include <iostream>
 #include <fstream>
 
+#include "mqtt.h"
+#include "stopwatch.h"
+#include "backup.h"
+
 #define BUTTON 20
 #define DEBOUNCETIME 15
+#define BROKERIP "192.168.213.66:1883"
+#define TOPIC "event/timer/1.1/time"
+#define TOPIC_S "event/timer/1.1/status"
 
 using namespace std;
 
@@ -36,9 +42,24 @@ bool flagbuttonPressed = false;
 bool flagshutdown = false;
 unsigned long long int interrupt_time = 0;
 
+PI_THREAD(status)
+{
+	char* state = "online";
+	while(1)
+	{
+		sendMessage((char*)TOPIC_S, state);
+		sleep(10);
+	}
+	return 0;
+}
+
 PI_THREAD (buttonThread)
 {
 	int buttonPressed = 0;
+	
+	char* payload;
+	payload = (char *) malloc(20 * sizeof(char));
+	
 	while(!flagshutdown)
 	{
 		if(digitalRead(BUTTON) == 0)
@@ -49,8 +70,12 @@ PI_THREAD (buttonThread)
 		if(buttonPressed == DEBOUNCETIME)		// Single Press
 		{
 			interrupt_time = getMicrotime();
-			//send interruptime
+			
+			getTime(&payload);
+			sendMessage((char*)TOPIC, payload);
+			
 			flagbuttonPressed = true;
+			writeBackup(payload);
 
 			for(int i=0;i<500;i++)
 			{
@@ -62,7 +87,7 @@ PI_THREAD (buttonThread)
 				flagshutdown = true;
 		}
 		usleep(1000);
-	}
+	}	
 	return 0;
 }
 
@@ -98,6 +123,11 @@ PI_THREAD (logbattery)
 int main (void)
 {
 	TFT_ST7735 tft = *new TFT_ST7735(0, 24, 25, 32000000);
+	
+	instantiateClient((char*)BROKERIP);
+	connectToBroker();
+
+	backupInit();
 
 	wiringPiSetupGpio();      					// initialize wiringPi and wiringPiGpio
 
@@ -126,12 +156,14 @@ int main (void)
 	int x = piThreadCreate (buttonThread) ;
 	if (x != 0)
   		printf ("buttonThread didn't start \n");
+	int x = piThreadCreate (status) ;
+	if (x != 0)
+  		printf ("statusThread didn't start \n");
 
 	char soc[10];
 	char volt[10];
 	
-	float socf, voltf, est = 0;
-	float last = 100;
+	float socf, voltf = 0;
 
 	int min, sec, millisec = 0;
 	unsigned long long int start, timenow = 0;
@@ -202,7 +234,9 @@ int main (void)
 
 		delay (120);
 	}
-
+	disconnectFromBroker();
+	free(&payload);
+	
 	return 0;
 }
 
