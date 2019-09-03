@@ -20,9 +20,11 @@
 #include <iostream>
 #include <fstream>
 
+extern "C" {
 #include "mqtt.h"
 #include "stopwatch.h"
 #include "backup.h"
+}
 
 #define BUTTON 20
 #define DEBOUNCETIME 15
@@ -30,7 +32,7 @@
 #define TOPIC "event/timer/1.1/time"
 #define TOPIC_S "event/timer/1.1/status"
 
-using namespace std;
+//using namespace std;
 
 float getsoc();
 float getvolt();
@@ -44,7 +46,7 @@ unsigned long long int interrupt_time = 0;
 
 PI_THREAD(status)
 {
-	char* state = "online";
+	char* state = (char*) "online";
 	while(1)
 	{
 		sendMessage((char*)TOPIC_S, state);
@@ -88,7 +90,7 @@ PI_THREAD (buttonThread)
 		}
 		usleep(1000);
 	}
-	free(&payload);
+	//free(&payload);
 	return 0;
 }
 
