@@ -1,8 +1,8 @@
 Main: main.o mqtt.o stopwatch.o backup.o
-	gcc -o Main main.o mqtt.o stopwatch.o backup.o -l paho-mqtt3cs -l wiringPi -l pthread
+	g++ -o Main main.o mqtt.o stopwatch.o backup.o -l paho-mqtt3cs -l wiringPi -I/usr/local/include -ltft_st7735
 
-main.o: main.c
-	gcc -c main.c
+main.o: main.cpp
+	g++ -c main.cpp
 
 mqtt.o: mqtt.c mqtt.h
 	gcc -c mqtt.c
