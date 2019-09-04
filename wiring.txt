@@ -14,6 +14,3 @@ MISO  not connected (for SD-Card)
 SCLK  not connected (for SD-Card)
 MOSI  not connected (for SD-Card)
 CS    not connected (for SD-Card)
-
-build with:
-g++ main.cpp -o tft_test -I/usr/local/include -lwiringPi -ltft_st7735
