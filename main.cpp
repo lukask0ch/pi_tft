@@ -53,8 +53,8 @@ PI_THREAD(status)
 	{
 		//sendMessage((char*)TOPIC_S, state);
 
-		if ( system("ping -c1 192.168.213.1 -w 2 ") == 0) //gateway 192.168.213.1
-    	{
+		if ( system("ping -c1 192.168.213.1 -w 2 ") == 0) //gateway ip 192.168.213.1
+    		{
        			connected = true;
    		}
 		else
@@ -73,7 +73,7 @@ PI_THREAD (buttonThread)
 	
 	while(1)
 	{
-		if(digitalRead(BUTTON) == 0)
+		if(digitalRead(BUTTON) == 0)			// low aktiv Button
 			buttonPressed++;
 		else
 			buttonPressed = 0;
@@ -94,7 +94,7 @@ PI_THREAD (buttonThread)
 					buttonPressed++;
 				usleep(10000);
 			}
-			if(buttonPressed>=500)				// Long Press
+			if(buttonPressed>=500)			// Long Press
 				flagshutdown = true;
 		}
 		usleep(1000);
@@ -110,7 +110,7 @@ PI_THREAD (logbattery)
    	char buffer [10];
 	
 	std::ofstream myfile;
-	myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);       //Dateipfad anpasssen!
+	myfile.open ("/home/pi/pi_tft/timesoc2.txt", std::ios_base::app);
 	myfile << "Neuer Start" << std::endl;
 	myfile.close();
 	
@@ -142,24 +142,23 @@ int main (void)
 
 	//backupInit();
 
-	wiringPiSetupGpio();      					// initialize wiringPi and wiringPiGpio
+	wiringPiSetupGpio();      				// initialize wiringPi and wiringPiGpio
 
 	pinMode(BUTTON, INPUT);
 	pullUpDnControl(BUTTON, PUD_UP);
 	
 	fd = wiringPiI2CSetup(0x36);				// initialize I2C Device
 
-	wiringPiI2CWriteReg16(fd, 0x06, 0x4000);	// start I2C Device
+	wiringPiI2CWriteReg16(fd, 0x06, 0x4000);		// start I2C Device
 
-	tft.commonInit();         					// initialize SPI and reset display
-	tft.initR();              					// initialize display
+	tft.commonInit();         				// initialize SPI and reset display
+	tft.initR();              				// initialize display
 	tft.setBackground(TFT_BLACK);
 
-	tft.clearScreen();        					// reset Display
+	tft.clearScreen();        				// reset Display
 	// tft.setRotation(true);					
 
 	tft.drawString(5,2,BAHN,TFT_WHITE,2);
-
 	tft.drawString(15,40,"laufende Zeit:",TFT_WHITE,1);
 	tft.drawString(15,85,"letzte Zeit:",TFT_WHITE,1);
 	tft.drawString(15,100,"00:00:00",TFT_WHITE,2);
@@ -271,7 +270,7 @@ int main (void)
 		if (sec==0 & sec_merker==0)					//update Akkuanzeige einmal pro minute
 		{
 			sec_merker=1;
-			socf = getsoc();				//getsoc or calcSoc
+			socf = getsoc();					//getsoc or calcSoc
 			snprintf(soc,6, "%f", socf);
 			strcat(soc, " %");
 			tft.drawString(5,145,soc,TFT_WHITE,1);
@@ -321,9 +320,9 @@ float calcSoc()
 	rawsoc = getsoc();
 	rawvolt = getvolt();
 	
-	temp = (rawvolt-3.48)*100/(4.15-3.48);		// Volt in Prozent umrechen mit max und min Batteriespannung
-	//result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	// gewichteter mittelwert
-	result = (rawsoc+temp)/2;			// mitterlwert
+	temp = (rawvolt-3.48)*100/(4.15-3.48);		  // Volt in Prozent umrechen mit max und min Batteriespannung
+	//result = sqrt((rawsoc*rawsoc+2*temp*temp)/3);	  // gewichteter mittelwert
+	result = (rawsoc+temp)/2;			  // mitterlwert
 	return result;
 }
 
